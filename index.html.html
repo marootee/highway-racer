@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Moto Traffic Quest 3D - World Edition</title>
+    <style>
+        html, body { margin: 0; padding: 0; height: 100%; width: 100%; background-color: #000; color: white; font-family: 'Segoe UI', sans-serif; overflow: hidden; user-select: none; }
+        canvas { display: block; }
+        
+        /* HUD Styling */
+        #hud { 
+            position: absolute; top: 20px; left: 20px; 
+            color: white; font-size: 20px; 
+            text-shadow: 2px 2px 2px #000; 
+            pointer-events: none;
+            background: rgba(0,0,0,0.6);
+            padding: 15px;
+            border-radius: 10px;
+            min-width: 200px;
+        }
+        #distance-display { margin-bottom: 5px; font-size: 24px; font-weight: bold; color: #fff; }
+        #level-display { font-size: 16px; color: #0ff; margin-bottom: 10px; font-weight: bold; }
+        
+        /* Coin Bar Container */
+        #coin-bar-container { width: 100%; height: 15px; background: #333; border-radius: 10px; overflow: hidden; margin-top: 5px; border: 1px solid #555; }
+        #coin-bar-fill { width: 0%; height: 100%; background: linear-gradient(90deg, #ffd700, #ffaa00); transition: width 0.2s; }
+        #coin-text { font-size: 14px; color: #ffd700; margin-bottom: 2px; display: flex; justify-content: space-between; }
+
+        #message { 
+            position: absolute; bottom: 50px; width: 100%; text-align: center; 
+            color: white; font-size: 16px; opacity: 0.8; pointer-events: none;
+            text-shadow: 1px 1px 2px black;
+            display: none;
+        }
+
+        /* Speedometer */
+        #speedometer {
+            position: absolute; bottom: 30px; right: 30px;
+            width: 180px; height: 180px;
+            background: radial-gradient(circle, #222 0%, #000 100%);
+            border-radius: 50%; border: 3px solid #444;
+            box-shadow: 0 0 20px rgba(0,0,0,0.8);
+            display: none;
+            justify-content: center; align-items: center;
+        }
+        #needle-container { position: absolute; width: 100%; height: 100%; transform: rotate(-120deg); transition: transform 0.1s ease-out; }
+        #needle { position: absolute; top: 15px; left: 50%; width: 4px; height: 70px; background: #ff3333; transform: translateX(-50%); }
+        #center-cap { position: absolute; width: 20px; height: 20px; background: #ccc; border-radius: 50%; z-index: 2; }
+        #digital-speed { position: absolute; bottom: 40px; color: #0ff; font-size: 26px; font-weight: bold; }
+
+        /* Camera Controls HUD */
+        #cam-controls {
+            position: absolute; top: 20px; right: 20px;
+            background: rgba(0,0,0,0.6);
+            padding: 10px;
+            border-radius: 10px;
+            pointer-events: none;
+            text-align: right;
+        }
+        .cam-btn { display: inline-block; padding: 5px 10px; background: rgba(255,255,255,0.2); margin-left: 5px; border-radius: 4px; font-size: 12px; }
+        .cam-btn.active { background: #00ccff; color: black; font-weight: bold; }
+
+        /* Menu Screens */
+        .screen-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9);
+            display: flex; justify-content: center; align-items: center;
+            flex-direction: column;
+            color: white;
+            z-index: 10;
+            display: none;
+        }
+        
+        .menu-title { font-size: 50px; font-weight: bold; color: #fff; text-shadow: 0 0 10px #00ccff; margin-bottom: 10px; }
+        .btn { margin: 10px; padding: 15px 40px; font-size: 20px; border: none; border-radius: 8px; cursor: pointer; transition: transform 0.1s; font-weight: bold; text-transform: uppercase; }
+        .btn:hover { transform: scale(1.05); }
+        .btn-play { background: #00cc66; color: white; }
+        .btn-garage { background: #ffaa00; color: black; }
+        .btn-missions { background: #00aaff; color: white; }
+        .btn-back { background: #555; color: white; margin-top: 30px; }
+        
+        /* Garage Styling */
+        .garage-container { display: flex; flex-direction: row; align-items: center; justify-content: center; width: 80%; max-width: 800px; }
+        .bike-preview { width: 200px; height: 200px; background: rgba(255,255,255,0.1); border-radius: 15px; margin: 0 20px; display: flex; justify-content: center; align-items: center; border: 2px solid rgba(255,255,255,0.2); }
+        .bike-stats { text-align: left; width: 300px; }
+        .stat-bar-bg { width: 100%; height: 10px; background: #333; margin: 5px 0; border-radius: 5px; }
+        .stat-bar-fill { height: 100%; border-radius: 5px; }
+        .nav-arrow { font-size: 40px; color: white; cursor: pointer; padding: 20px; background: rgba(255,255,255,0.1); border-radius: 50%; }
+        
+        /* Mission Styling */
+        .mission-list { width: 60%; max-width: 600px; }
+        .mission-item { background: rgba(255,255,255,0.1); padding: 15px; margin: 10px 0; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; border-left: 5px solid #00ccff; }
+        .mission-reward { color: #ffd700; font-weight: bold; }
+        .mission-progress { font-size: 14px; color: #aaa; }
+
+        /* Game Over */
+        #game-over-screen h1 { color: #ff4444; font-size: 60px; margin: 0; }
+        #game-over-stats { margin: 20px 0; font-size: 24px; text-align: center; }
+
+        /* Loading Screen */
+        #loading-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; color: white; display: flex; justify-content: center; align-items: center; flex-direction: column; z-index: 2000; }
+    </style>
+</head>
+<body>
+
+<div id="loading-screen">
+    <h1 style="color:white;">LOADING...</h1>
+    <p id="loading-status" style="color:#aaa;">Generating World...</p>
+</div>
+
+<!-- HUD -->
+<div id="hud" style="display:none;">
+    <div id="level-display">LEVEL 1 - DAY</div>
+    <div id="distance-display">0 m</div>
+    
+    <!-- Coin Bar Section -->
+    <div id="coin-text">
+        <span>COINS</span>
+        <span id="coin-count">0</span>
+    </div>
+    <div id="coin-bar-container">
+        <div id="coin-bar-fill"></div>
+    </div>
+</div>
+
+<!-- Camera Controls -->
+<div id="cam-controls" style="display:none;">
+    <div><span class="cam-btn active" id="cam1">1: Std</span> <span class="cam-btn" id="cam2">2: Far</span> <span class="cam-btn" id="cam3">3: Hood</span></div>
+</div>
+
+<div id="message">W/S: Gas/Brake | A/D: Lanes | 1/2/3: Camera</div>
+
+<!-- Speedometer -->
+<div id="speedometer">
+    <div id="needle-container"><div id="needle"></div></div>
+    <div id="center-cap"></div>
+    <div id="digital-speed">0</div>
+</div>
+
+<!-- 1. MAIN MENU -->
+<div id="main-menu-screen" class="screen-overlay">
+    <div class="menu-title">MOTO QUEST 3D</div>
+    <p style="margin-bottom: 30px; color: #aaa;">World Edition</p>
+    <button class="btn btn-play" onclick="startGame()">PLAY</button>
+    <button class="btn btn-garage" onclick="showScreen('garage-screen')">GARAGE</button>
+    <button class="btn btn-missions" onclick="showScreen('missions-screen')">MISSIONS</button>
+</div>
+
+<!-- 2. GARAGE SCREEN -->
+<div id="garage-screen" class="screen-overlay">
+    <div class="menu-title" style="font-size: 40px;">GARAGE</div>
+    <div class="garage-container">
+        <div class="nav-arrow" onclick="changeBikeView(-1)">&lt;</div>
+        <div class="bike-preview"><div id="garage-bike-display" style="font-size: 80px;">&#127949;</div></div>
+        <div class="bike-stats">
+            <h2 id="bike-name" style="margin:0 0 10px 0;">Standard</h2>
+            <div>Speed:</div>
+            <div class="stat-bar-bg"><div id="stat-speed" class="stat-bar-fill" style="width: 50%; background: #00ccff;"></div></div>
+            <div>Accel:</div>
+            <div class="stat-bar-bg"><div id="stat-accel" class="stat-bar-fill" style="width: 50%; background: #ffaa00;"></div></div>
+            <p id="bike-cost" style="color: #ffd700; font-size: 20px; margin-top: 15px;">OWNED</p>
+            <button id="buy-btn" class="btn" style="display:none; margin-top:10px; padding: 10px 20px;">BUY</button>
+        </div>
+        <div class="nav-arrow" onclick="changeBikeView(1)">&gt;</div>
+    </div>
+    <button class="btn btn-back" onclick="showScreen('main-menu-screen')">BACK</button>
+</div>
+
+<!-- 3. MISSIONS SCREEN -->
+<div id="missions-screen" class="screen-overlay">
+    <div class="menu-title" style="font-size: 40px;">MISSIONS</div>
+    <div class="mission-list" id="mission-list-container"></div>
+    <button class="btn btn-back" onclick="showScreen('main-menu-screen')">BACK</button>
+</div>
+
+<!-- 4. GAME OVER SCREEN -->
+<div id="game-over-screen" class="screen-overlay">
+    <h1>WASTED</h1>
+    <div id="game-over-stats">
+        <p>Distance: <span id="final-dist">0</span>m</p>
+        <p>Coins Earned: <span id="final-coins">0</span></p>
+    </div>
+    <button class="btn btn-play" onclick="startGame()">RETRY</button>
+    <button class="btn btn-back" onclick="showScreen('main-menu-screen')">MENU</button>
+</div>
+
+<script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
+
+<script>
+    window.onload = function() {
+        if (typeof THREE === 'undefined') {
+            document.getElementById('loading-status').innerHTML = "<span style='color:red;'>ERROR: Check Internet Connection</span>";
+            return;
+        }
+        setTimeout(() => {
+            initGameSystems();
+            document.getElementById('loading-screen').style.display = 'none';
+            showScreen('main-menu-screen');
+        }, 100);
+    };
+
+    // --- GAME DATA ---
+    let playerData = {
+        coins: 500, 
+        currentBikeId: 0,
+        ownedBikes: [0],
+        stats: { totalDistance: 0, totalCoinsCollected: 0 }
+    };
+
+    // Bike Stats
+    const bikeTypes = [
+        { id: 0, name: "Street 125", color: 0xff3333, maxSpeed: 2.5, accel: 0.05, cost: 0 },
+        { id: 1, name: "Racer 500", color: 0x00ccff, maxSpeed: 3.5, accel: 0.08, cost: 500 },
+        { id: 2, name: "Thunder Chopper", color: 0xffaa00, maxSpeed: 3.0, accel: 0.06, cost: 1000 },
+        { id: 3, name: "Phantom X", color: 0x111111, maxSpeed: 5.0, accel: 0.12, cost: 2500 },
+        { id: 4, name: "Neon Rider", color: 0xff00ff, maxSpeed: 4.5, accel: 0.10, cost: 4000 }
+    ];
+
+    const missions = [
+        { id: 0, text: "Travel 1000 meters total", target: 1000, type: "distance", reward: 200, completed: false },
+        { id: 1, text: "Collect 10 coins total", target: 10, type: "coins", reward: 150, completed: false },
+        { id: 2, text: "Travel 5000 meters total", target: 5000, type: "distance", reward: 1000, completed: false }
+    ];
+
+    // --- CORE VARIABLES ---
+    let scene, camera, renderer;
+    let bike; 
+    const lanes = [-6, -2, 2, 6]; 
+    let currentLaneIndex = 1; 
+    let speed = 0;
+    let distance = 0;
+    let sessionCoins = 0;
+    let gameActive = false;
+    const keys = {};
+    let viewingBikeIndex = 0;
+    
+    // Level System
+    let currentLevel = 1;
+    const levelParams = [
+        { dist: 0, fogColor: 0x87CEEB, skyColor: 0x87CEEB, name: "LEVEL 1 - DAY" },
+        { dist: 1000, fogColor: 0xff7744, skyColor: 0xff5533, name: "LEVEL 2 - SUNSET" },
+        { dist: 2500, fogColor: 0x111133, skyColor: 0x000011, name: "LEVEL 3 - NIGHT" }
+    ];
+
+    // Camera Settings
+    let cameraMode = 1; 
+    
+    const roadSegments = [];
+    const cars = [];
+    const coinObjects = [];
+    const trees = [];
+    const clouds = []; // New Clouds Array
+
+    let groundTile1, groundTile2; // For endless ground
+
+    // --- INIT FUNCTION ---
+    function initGameSystems() {
+        const save = localStorage.getItem('motoQuestSave');
+        if (save) playerData = JSON.parse(save);
+
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x87CEEB);
+        scene.fog = new THREE.Fog(0x87CEEB, 50, 300);
+
+        camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        
+        renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        document.body.appendChild(renderer.domElement);
+
+        // Lighting
+        const ambient = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambient);
+        const sun = new THREE.DirectionalLight(0xffffff, 0.8);
+        sun.position.set(50, 100, 50);
+        sun.castShadow = true;
+        scene.add(sun);
+
+        // Environment
+        createEndlessGround();
+        createClouds();
+        
+        // Events
+        window.addEventListener('keydown', e => {
+            keys[e.key.toLowerCase()] = true;
+            if(e.key === '1') setCameraMode(1);
+            if(e.key === '2') setCameraMode(2);
+            if(e.key === '3') setCameraMode(3);
+        });
+        window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+        
+        updateMissionsUI();
+    }
+
+    function createEndlessGround() {
+        // Create two large tiles of grass
+        const geo = new THREE.PlaneGeometry(1000, 1000);
+        const mat = new THREE.MeshLambertMaterial({ color: 0x558855 });
+        
+        groundTile1 = new THREE.Mesh(geo, mat);
+        groundTile1.rotation.x = -Math.PI / 2;
+        groundTile1.position.y = -0.1;
+        groundTile1.receiveShadow = true;
+        scene.add(groundTile1);
+
+        groundTile2 = new THREE.Mesh(geo, mat);
+        groundTile2.rotation.x = -Math.PI / 2;
+        groundTile2.position.y = -0.1;
+        groundTile2.position.z = -1000; // Place ahead
+        groundTile2.receiveShadow = true;
+        scene.add(groundTile2);
+    }
+
+    function createClouds() {
+        const cloudMat = new THREE.MeshLambertMaterial({ color: 0xffffff });
+        
+        for(let i=0; i<20; i++) {
+            const cloud = new THREE.Group();
+            
+            // Create fluffy cloud shape
+            const geo = new THREE.SphereGeometry(10, 8, 8);
+            const nBlobs = 3 + Math.floor(Math.random() * 3);
+            
+            for(let j=0; j<nBlobs; j++) {
+                const blob = new THREE.Mesh(geo, cloudMat);
+                blob.position.set(
+                    (Math.random() - 0.5) * 20,
+                    (Math.random() - 0.5) * 5,
+                    (Math.random() - 0.5) * 10
+                );
+                blob.scale.set(
+                    1 + Math.random(),
+                    0.8 + Math.random() * 0.2,
+                    1 + Math.random()
+                );
+                cloud.add(blob);
+            }
+
+            cloud.position.set(
+                (Math.random() - 0.5) * 500, // X spread
+                50 + Math.random() * 30,    // Y height
+                (Math.random() - 0.5) * 500  // Z spread
+            );
+            
+            scene.add(cloud);
+            clouds.push(cloud);
+        }
+    }
+
+    function createTree() {
+        const g = new THREE.Group();
+        const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.3, 2), new THREE.MeshLambertMaterial({color: 0x8B4513}));
+        trunk.position.y = 1;
+        g.add(trunk);
+        const leaves = new THREE.Mesh(new THREE.ConeGeometry(1.5, 3, 6), new THREE.MeshLambertMaterial({color: 0x228B22}));
+        leaves.position.y = 3.5;
+        g.add(leaves);
+        return g;
+    }
+
+    function setCameraMode(mode) {
+        cameraMode = mode;
+        document.getElementById('cam1').classList.remove('active');
+        document.getElementById('cam2').classList.remove('active');
+        document.getElementById('cam3').classList.remove('active');
+        document.getElementById('cam' + mode).classList.add('active');
+    }
+
+    // --- UI FUNCTIONS ---
+    function showScreen(id) {
+        document.querySelectorAll('.screen-overlay').forEach(el => el.style.display = 'none');
+        const screen = document.getElementById(id);
+        if(screen) screen.style.display = 'flex';
+        
+        if (id === 'garage-screen') updateGarageUI();
+        if (id === 'missions-screen') updateMissionsUI();
+    }
+
+    function updateGarageUI() {
+        const bikeData = bikeTypes[viewingBikeIndex];
+        document.getElementById('bike-name').innerText = bikeData.name;
+        
+        const speedPercent = (bikeData.maxSpeed / 5.0) * 100;
+        const accelPercent = (bikeData.accel / 0.12) * 100;
+        document.getElementById('stat-speed').style.width = speedPercent + "%";
+        document.getElementById('stat-accel').style.width = accelPercent + "%";
+
+        const preview = document.getElementById('garage-bike-display');
+        preview.style.background = `#${bikeData.color.toString(16).padStart(6, '0')}`;
+        preview.style.borderRadius = '50%';
+        preview.style.width = '100px';
+        preview.style.height = '100px';
+        preview.innerHTML = "&#127949;";
+
+        const costEl = document.getElementById('bike-cost');
+        const buyBtn = document.getElementById('buy-btn');
+
+        if (playerData.ownedBikes.includes(bikeData.id)) {
+            costEl.innerText = playerData.currentBikeId === bikeData.id ? "EQUIPPED" : "OWNED";
+            costEl.style.color = "#00ff00";
+            buyBtn.style.display = 'none';
+        } else {
+            costEl.innerText = "Cost: " + bikeData.cost;
+            costEl.style.color = "#ffd700";
+            buyBtn.style.display = 'block';
+            buyBtn.onclick = () => buyBike(bikeData.id);
+            
+            if (playerData.coins < bikeData.cost) {
+                buyBtn.disabled = true; buyBtn.style.opacity = 0.5; buyBtn.innerText = "NEED COINS";
+            } else {
+                buyBtn.disabled = false; buyBtn.style.opacity = 1; buyBtn.innerText = "BUY";
+            }
+        }
+    }
+
+    function changeBikeView(dir) {
+        viewingBikeIndex += dir;
+        if (viewingBikeIndex < 0) viewingBikeIndex = bikeTypes.length - 1;
+        if (viewingBikeIndex >= bikeTypes.length) viewingBikeIndex = 0;
+        updateGarageUI();
+    }
+
+    function buyBike(id) {
+        const bikeData = bikeTypes.find(b => b.id === id);
+        if (playerData.coins >= bikeData.cost && !playerData.ownedBikes.includes(id)) {
+            playerData.coins -= bikeData.cost;
+            playerData.ownedBikes.push(id);
+            playerData.currentBikeId = id;
+            saveData();
+            updateGarageUI();
+        }
+    }
+
+    function updateMissionsUI() {
+        const container = document.getElementById('mission-list-container');
+        container.innerHTML = '';
+        missions.forEach(m => {
+            const div = document.createElement('div');
+            div.className = 'mission-item';
+            let progress = 0;
+            if (m.type === 'distance') progress = playerData.stats.totalDistance;
+            if (m.type === 'coins') progress = playerData.stats.totalCoinsCollected;
+            const isComplete = progress >= m.target;
+            div.innerHTML = `
+                <div>
+                    <p style="margin:0; font-weight:bold; ${isComplete ? 'text-decoration: line-through; color:#888' : ''}">${m.text}</p>
+                    <p class="mission-progress">${Math.min(progress, m.target)} / ${m.target}</p>
+                </div>
+                <div class="mission-reward">${isComplete ? 'DONE' : m.reward + ' C'}</div>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    function saveData() { localStorage.setItem('motoQuestSave', JSON.stringify(playerData)); }
+
+    // --- GAME LOGIC ---
+    function startGame() {
+        showScreen('none'); 
+        document.getElementById('hud').style.display = 'block';
+        document.getElementById('speedometer').style.display = 'flex';
+        document.getElementById('message').style.display = 'block';
+        document.getElementById('cam-controls').style.display = 'block';
+        
+        const bikeType = bikeTypes.find(b => b.id === playerData.currentBikeId);
+        speed = 0; distance = 0; sessionCoins = 0; currentLevel = 1;
+        gameActive = true; currentLaneIndex = 1;
+        
+        // Reset Environment
+        if(bike) scene.remove(bike);
+        cars.forEach(c => scene.remove(c));
+        coinObjects.forEach(c => scene.remove(c));
+        roadSegments.forEach(rs => scene.remove(rs));
+        trees.forEach(t => scene.remove(t));
+        
+        cars.length = 0; coinObjects.length = 0; roadSegments.length = 0; trees.length = 0;
+        
+        bike = createBikeMesh(bikeType);
+        bike.position.set(lanes[currentLaneIndex], 0, 0);
+        scene.add(bike);
+        
+        // Reset Ground
+        groundTile1.position.z = 0;
+        groundTile2.position.z = -1000;
+
+        for(let i=0; i<5; i++) roadSegments.push(createRoadSegment(-i * 100));
+        for(let i=0; i<10; i++) createCar(-50 - i*25);
+        for(let i=0; i<5; i++) createCoin(-30 - i*40);
+        
+        // Spawn initial trees
+        for(let i=0; i<30; i++) {
+            const tree = createTree();
+            const side = (Math.random() > 0.5) ? 1 : -1;
+            tree.position.set(side * (15 + Math.random() * 50), 0, -i * 30);
+            scene.add(tree);
+            trees.push(tree);
+        }
+        
+        setCameraMode(1);
+        animate();
+    }
+
+    function createBikeMesh(type) {
+        const g = new THREE.Group();
+        const mat = new THREE.MeshStandardMaterial({ color: type.color });
+        const body = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.6, 2), mat);
+        body.position.y = 0.6; body.castShadow = true; g.add(body);
+        const tank = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.4, 0.8), mat);
+        tank.position.set(0, 1.0, 0.2); g.add(tank);
+        const wheelGeo = new THREE.CylinderGeometry(0.35, 0.35, 0.2, 16);
+        const wheelMat = new THREE.MeshStandardMaterial({ color: 0x222222 });
+        const fWheel = new THREE.Mesh(wheelGeo, wheelMat);
+        fWheel.rotation.z = Math.PI / 2; fWheel.position.set(0, 0.35, 1.1); g.add(fWheel);
+        const bWheel = new THREE.Mesh(wheelGeo, wheelMat);
+        bWheel.rotation.z = Math.PI / 2; bWheel.position.set(0, 0.35, -0.9); g.add(bWheel);
+        return g;
+    }
+
+    function createRoadSegment(z) {
+        const g = new THREE.Group();
+        
+        // Road Surface
+        const road = new THREE.Mesh(new THREE.PlaneGeometry(24, 100), new THREE.MeshStandardMaterial({ color: 0x333333 }));
+        road.rotation.x = -Math.PI / 2; road.position.y = 0.01; road.receiveShadow = true; g.add(road);
+        
+        // Lane Markings
+        const stripeGeo = new THREE.PlaneGeometry(0.2, 4);
+        const whiteMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+        const yellowMat = new THREE.MeshBasicMaterial({ color: 0xffaa00 });
+
+        // Center Divider
+        const center1 = new THREE.Mesh(new THREE.PlaneGeometry(0.15, 100), yellowMat);
+        center1.rotation.x = -Math.PI / 2; center1.position.set(-0.2, 0.02, 0); g.add(center1);
+        const center2 = new THREE.Mesh(new THREE.PlaneGeometry(0.15, 100), yellowMat);
+        center2.rotation.x = -Math.PI / 2; center2.position.set(0.2, 0.02, 0); g.add(center2);
+
+        // Lanes
+        for(let l=0; l<2; l++) {
+            const lx = -6 + (l*4);
+            for(let d=0; d<10; d++) {
+                const s = new THREE.Mesh(stripeGeo, whiteMat);
+                s.rotation.x = -Math.PI / 2; s.position.set(lx, 0.02, -45 + d*10); g.add(s);
+            }
+        }
+        for(let l=0; l<2; l++) {
+            const lx = 2 + (l*4);
+            for(let d=0; d<10; d++) {
+                const s = new THREE.Mesh(stripeGeo, whiteMat);
+                s.rotation.x = -Math.PI / 2; s.position.set(lx, 0.02, -45 + d*10); g.add(s);
+            }
+        }
+
+        // Fences
+        const fenceMat = new THREE.MeshLambertMaterial({ color: 0x888888 });
+        const postGeo = new THREE.BoxGeometry(0.2, 1.5, 0.2);
+        const railGeo = new THREE.BoxGeometry(0.1, 0.1, 100);
+        
+        // Left Fence
+        const leftRail = new THREE.Mesh(railGeo, fenceMat);
+        leftRail.position.set(-12.5, 1, 0); g.add(leftRail);
+        for(let p=0; p<10; p++) {
+            const post = new THREE.Mesh(postGeo, fenceMat);
+            post.position.set(-12.5, 0.75, -50 + p*10 + 5);
+            g.add(post);
+        }
+        
+        // Right Fence
+        const rightRail = new THREE.Mesh(railGeo, fenceMat);
+        rightRail.position.set(12.5, 1, 0); g.add(rightRail);
+        for(let p=0; p<10; p++) {
+            const post = new THREE.Mesh(postGeo, fenceMat);
+            post.position.set(12.5, 0.75, -50 + p*10 + 5);
+            g.add(post);
+        }
+
+        g.position.z = z;
+        scene.add(g);
+        return g;
+    }
+
+    function createCar(z) {
+        const g = new THREE.Group();
+        const c = [0x00ccff, 0xffcc00, 0x00ff00, 0xffffff];
+        const body = new THREE.Mesh(new THREE.BoxGeometry(1.8, 1, 3.5), new THREE.MeshStandardMaterial({ color: c[Math.floor(Math.random()*c.length)] }));
+        body.position.y = 0.8; body.castShadow = true; g.add(body);
+        const top = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.6, 1.8), new THREE.MeshStandardMaterial({ color: 0x222222 }));
+        top.position.set(0, 1.5, -0.2); g.add(top);
+        
+        const laneIdx = Math.floor(Math.random() * lanes.length);
+        g.position.x = lanes[laneIdx];
+        g.position.z = z;
+
+        if (laneIdx < 2) {
+            g.userData.speed = 0.1 + Math.random() * 0.1; 
+            g.rotation.y = 0; 
+        } else {
+            g.userData.speed = 0.5 + Math.random() * 0.5; 
+            g.rotation.y = Math.PI; 
+        }
+
+        scene.add(g);
+        cars.push(g);
+    }
+
+    function createCoin(z) {
+        const g = new THREE.Group();
+        const coinGeo = new THREE.CylinderGeometry(0.5, 0.5, 0.1, 16);
+        const coinMat = new THREE.MeshStandardMaterial({ color: 0xffd700, emissive: 0xffa500, emissiveIntensity: 0.5 });
+        const coin = new THREE.Mesh(coinGeo, coinMat);
+        coin.rotation.x = Math.PI / 2; g.add(coin);
+        g.position.z = z;
+        g.position.x = lanes[Math.floor(Math.random()*lanes.length)]; 
+        g.position.y = 1;
+        scene.add(g); coinObjects.push(g);
+    }
+
+    function gameOver() {
+        gameActive = false;
+        playerData.coins += sessionCoins;
+        playerData.stats.totalDistance += Math.floor(distance);
+        playerData.stats.totalCoinsCollected += sessionCoins;
+        missions.forEach(m => {
+            if(m.completed) return;
+            let prog = 0;
+            if(m.type === 'distance') prog = playerData.stats.totalDistance;
+            if(m.type === 'coins') prog = playerData.stats.totalCoinsCollected;
+            if(prog >= m.target) { m.completed = true; playerData.coins += m.reward; }
+        });
+        saveData();
+        document.getElementById('final-dist').innerText = Math.floor(distance);
+        document.getElementById('final-coins').innerText = sessionCoins;
+        document.getElementById('hud').style.display = 'none';
+        document.getElementById('speedometer').style.display = 'none';
+        document.getElementById('cam-controls').style.display = 'none';
+        showScreen('game-over-screen');
+    }
+
+    function updateHUD() {
+        document.getElementById('distance-display').innerText = Math.floor(distance) + " m";
+        
+        const percent = (sessionCoins % 50) * 2; 
+        document.getElementById('coin-bar-fill').style.width = percent + "%";
+        document.getElementById('coin-count').innerText = sessionCoins;
+        
+        const bikeType = bikeTypes.find(b => b.id === playerData.currentBikeId);
+        const kmh = Math.round(speed * 150);
+        document.getElementById('digital-speed').innerText = kmh;
+        const deg = -120 + ( (speed / bikeType.maxSpeed) * 240 );
+        document.getElementById('needle-container').style.transform = `rotate(${deg}deg)`;
+    }
+
+    // --- MAIN LOOP ---
+    function animate() {
+        if (!gameActive) return;
+        requestAnimationFrame(animate);
+        
+        const bikeType = bikeTypes.find(b => b.id === playerData.currentBikeId);
+        
+        // Input
+        if (keys['w'] || keys['arrowup']) speed = Math.min(speed + bikeType.accel, bikeType.maxSpeed);
+        else if (keys['s'] || keys['arrowdown']) speed = Math.max(speed - bikeType.accel * 2, 0);
+        else speed = Math.max(speed - 0.02, 0);
+        
+        // Lane Logic
+        if (keys['a'] || keys['arrowleft']) {
+            if (currentLaneIndex > 0 && !keys['laneLock']) { currentLaneIndex--; keys['laneLock'] = true; }
+        } else if (keys['d'] || keys['arrowright']) {
+            if (currentLaneIndex < lanes.length - 1 && !keys['laneLock']) { currentLaneIndex++; keys['laneLock'] = true; }
+        } 
+        if (!keys['a'] && !keys['arrowleft'] && !keys['d'] && !keys['arrowright']) keys['laneLock'] = false;
+
+        // Physics
+        const targetX = lanes[currentLaneIndex];
+        bike.position.x += (targetX - bike.position.x) * 0.15;
+        bike.position.z -= speed;
+        bike.rotation.z = (targetX - bike.position.x) * 0.15;
+        
+        bike.children[2].rotation.x += speed;
+        bike.children[3].rotation.x += speed;
+
+        distance += speed * 0.5;
+
+        // Level Up Logic
+        let newLevel = 1;
+        if (distance > 2500) newLevel = 3;
+        else if (distance > 1000) newLevel = 2;
+        
+        if (newLevel !== currentLevel) {
+            currentLevel = newLevel;
+            const p = levelParams[currentLevel-1];
+            scene.background.setHex(p.skyColor);
+            scene.fog.color.setHex(p.fogColor);
+            document.getElementById('level-display').innerText = p.name;
+        }
+
+        // Camera Logic
+        let camX, camY, camZ, lookZ;
+        const bX = bike.position.x;
+        const bZ = bike.position.z;
+
+        if (cameraMode === 1) { camX = bX * 0.5; camY = 8; camZ = bZ + 15; lookZ = bZ - 20; }
+        else if (cameraMode === 2) { camX = bX * 0.8; camY = 15; camZ = bZ + 30; lookZ = bZ - 30; }
+        else { camX = bX; camY = 2.5; camZ = bZ + 2; lookZ = bZ - 20; }
+        
+        camera.position.set(camX, camY, camZ);
+        camera.lookAt(bX, 1, lookZ);
+
+        // --- Infinite World Updates ---
+
+        // Ground Looping
+        // If bike moves past the boundary of tile 1 (z < -500 relative to tile center 0), shift tiles
+        // Tile 1 is at 0, Tile 2 at -1000.
+        // If bike.z is less than tile1.z - 500, shift both tiles back by 1000
+        if (bike.position.z < groundTile1.position.z - 500) {
+            groundTile1.position.z -= 1000;
+            groundTile2.position.z -= 1000;
+        }
+        
+        // Cloud Movement (Slow drift)
+        clouds.forEach(c => {
+            c.position.x += 0.05; // Drift right slowly
+            if (c.position.x > 300) c.position.x = -300; // Loop clouds
+        });
+
+        // Road Looping
+        roadSegments.forEach(rs => {
+            if (rs.position.z > bike.position.z + 60) {
+                let minZ = Math.min(...roadSegments.map(r => r.position.z));
+                rs.position.z = minZ - 100;
+            }
+        });
+
+        // Tree Looping
+        trees.forEach(t => {
+             if (t.position.z > bike.position.z + 60) {
+                 t.position.z -= 1000; 
+                 const side = (Math.random() > 0.5) ? 1 : -1;
+                 t.position.x = side * (15 + Math.random() * 50);
+             }
+        });
+        
+        // Traffic Looping
+        for (let i = cars.length - 1; i >= 0; i--) {
+            const c = cars[i];
+            c.position.z += c.userData.speed;
+            
+            if (c.position.z > bike.position.z + 60 || c.position.z < bike.position.z - 150) {
+                scene.remove(c); cars.splice(i, 1);
+            }
+        }
+        
+        // Spawn Logic
+        let spawnRate = 0.03;
+        if (currentLevel === 2) spawnRate = 0.05;
+        if (currentLevel === 3) spawnRate = 0.07;
+
+        if (Math.random() < spawnRate) createCar(bike.position.z - 150 - Math.random()*50);
+
+        // Coins
+        for (let i = coinObjects.length - 1; i >= 0; i--) {
+            const c = coinObjects[i];
+            c.rotation.y += 0.05;
+            if (bike.position.distanceTo(c.position) < 1.5) {
+                sessionCoins++; scene.remove(c); coinObjects.splice(i, 1);
+            } else if (c.position.z > bike.position.z + 20) { scene.remove(c); coinObjects.splice(i, 1); }
+        }
+        if (Math.random() < 0.02) createCoin(bike.position.z - 100 - Math.random()*50);
+
+        // Collision
+        const bikeBox = new THREE.Box3().setFromObject(bike).expandByScalar(-0.3);
+        for (const car of cars) {
+            const carBox = new THREE.Box3().setFromObject(car);
+            if (bikeBox.intersectsBox(carBox)) return gameOver();
+        }
+
+        updateHUD();
+        renderer.render(scene, camera);
+    }
+</script>
+</body>
+</html>
