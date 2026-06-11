@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Moto Traffic Quest 3D - World Edition</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
         html, body {
             margin: 0;
@@ -84,10 +85,10 @@
         /* Speedometer */
         #speedometer {
             position: absolute;
-            bottom: 30px;
-            right: 30px;
-            width: 180px;
-            height: 180px;
+            bottom: 20px;
+            right: 20px;
+            width: 150px;
+            height: 150px;
             background: radial-gradient(circle, #222 0%, #000 100%);
             border-radius: 50%;
             border: 3px solid #444;
@@ -108,23 +109,23 @@
             top: 15px;
             left: 50%;
             width: 4px;
-            height: 70px;
+            height: 60px;
             background: #ff3333;
             transform: translateX(-50%);
         }
         #center-cap {
             position: absolute;
-            width: 20px;
-            height: 20px;
+            width: 16px;
+            height: 16px;
             background: #ccc;
             border-radius: 50%;
             z-index: 2;
         }
         #digital-speed {
             position: absolute;
-            bottom: 40px;
+            bottom: 34px;
             color: #0ff;
-            font-size: 26px;
+            font-size: 22px;
             font-weight: bold;
         }
 
@@ -132,20 +133,22 @@
         #cam-controls {
             position: absolute;
             top: 20px;
-            right: 20px;
+            right: 90px;
             background: rgba(0,0,0,0.6);
-            padding: 10px;
-            border-radius: 10px;
-            pointer-events: none;
+            padding: 8px;
+            border-radius: 8px;
+            pointer-events: auto;
             text-align: right;
+            display: flex;
+            gap: 4px;
         }
         .cam-btn {
             display: inline-block;
-            padding: 5px 10px;
-            background: rgba(255,255,255,0.2);
-            margin-left: 5px;
+            padding: 5px 8px;
+            background: rgba(255,255,255,0.15);
             border-radius: 4px;
-            font-size: 12px;
+            font-size: 11px;
+            cursor: pointer;
         }
         .cam-btn.active {
             background: #00ccff;
@@ -171,7 +174,7 @@
         }
 
         .menu-title {
-            font-size: 50px;
+            font-size: 42px;
             font-weight: bold;
             color: #fff;
             text-shadow: 0 0 10px #00ccff;
@@ -180,7 +183,7 @@
         .btn {
             margin: 10px;
             padding: 15px 40px;
-            font-size: 20px;
+            font-size: 18px;
             border: none;
             border-radius: 8px;
             cursor: pointer;
@@ -200,15 +203,15 @@
             flex-direction: row;
             align-items: center;
             justify-content: center;
-            width: 80%;
+            width: 90%;
             max-width: 800px;
         }
         .bike-preview {
-            width: 200px;
-            height: 200px;
+            width: 180px;
+            height: 180px;
             background: rgba(255,255,255,0.1);
             border-radius: 15px;
-            margin: 0 20px;
+            margin: 0 16px;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -216,7 +219,7 @@
         }
         .bike-stats {
             text-align: left;
-            width: 300px;
+            width: 260px;
         }
         .stat-bar-bg {
             width: 100%;
@@ -230,17 +233,17 @@
             border-radius: 5px;
         }
         .nav-arrow {
-            font-size: 40px;
+            font-size: 32px;
             color: white;
             cursor: pointer;
-            padding: 20px;
+            padding: 16px;
             background: rgba(255,255,255,0.1);
             border-radius: 50%;
         }
 
         /* Mission Styling */
         .mission-list {
-            width: 60%;
+            width: 80%;
             max-width: 600px;
         }
         .mission-item {
@@ -265,12 +268,12 @@
         /* Game Over */
         #game-over-screen h1 {
             color: #ff4444;
-            font-size: 60px;
+            font-size: 52px;
             margin: 0;
         }
         #game-over-stats {
             margin: 20px 0;
-            font-size: 24px;
+            font-size: 22px;
             text-align: center;
         }
 
@@ -299,45 +302,60 @@
             z-index: 30;
         }
 
-        .mobile-row {
+        /* Bottom row: accelerator (left, big), brake (right, big) */
+        .mobile-row-bottom {
             position: absolute;
-            bottom: 16px;
+            bottom: 12px;
             width: 100%;
             display: flex;
             justify-content: space-between;
-            padding: 0 16px;
+            padding: 0 10px;
             pointer-events: none;
         }
 
-        .mobile-row:first-of-type {
-            bottom: 90px;
+        /* Above: lane arrows together on right side */
+        .mobile-row-arrows {
+            position: absolute;
+            bottom: 100px;
+            right: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            pointer-events: none;
         }
 
         .ctrl-btn {
             pointer-events: auto;
             border: none;
             border-radius: 999px;
-            padding: 12px 18px;
-            min-width: 72px;
-            font-size: 16px;
+            padding: 14px 20px;
+            min-width: 80px;
+            font-size: 18px;
             font-weight: 600;
-            background: rgba(0,0,0,0.5);
+            background: rgba(0,0,0,0.6);
             color: #fff;
             box-shadow: 0 0 10px rgba(0,0,0,0.6);
             backdrop-filter: blur(6px);
             touch-action: manipulation;
         }
 
-        .ctrl-left, .ctrl-right {
-            min-width: 64px;
-        }
-
-        .ctrl-gas {
-            background: rgba(0, 204, 102, 0.9);
+        .ctrl-accel {
+            background: rgba(16, 185, 129, 0.95);
+            min-width: 96px;
+            padding: 18px 22px;
+            font-size: 20px;
         }
 
         .ctrl-brake {
-            background: rgba(239, 68, 68, 0.9);
+            background: rgba(239, 68, 68, 0.95);
+            min-width: 88px;
+            padding: 16px 20px;
+        }
+
+        .ctrl-arrow {
+            min-width: 60px;
+            padding: 10px 16px;
+            font-size: 18px;
         }
 
         /* Control settings button & panel */
@@ -405,6 +423,12 @@
             font-size: 13px;
             cursor: pointer;
         }
+
+        @media (max-width: 600px) {
+            .menu-title { font-size: 34px; }
+            .btn { font-size: 16px; padding: 12px 30px; }
+            #hud { top: 10px; left: 10px; padding: 10px; }
+        }
     </style>
 </head>
 <body>
@@ -431,14 +455,12 @@
 
 <!-- Camera Controls -->
 <div id="cam-controls" style="display:none;">
-    <div>
-        <span class="cam-btn active" id="cam1">1: Std</span>
-        <span class="cam-btn" id="cam2">2: Far</span>
-        <span class="cam-btn" id="cam3">3: Hood</span>
-    </div>
+    <span class="cam-btn active" id="cam1">CAM 1</span>
+    <span class="cam-btn" id="cam2">CAM 2</span>
+    <span class="cam-btn" id="cam3">CAM 3</span>
 </div>
 
-<div id="message">W/S: Gas/Brake | A/D: Lanes | 1/2/3: Camera</div>
+<div id="message">W/S: Gas/Brake · A/D or Arrows: Lanes · 1/2/3: Camera</div>
 
 <!-- Speedometer -->
 <div id="speedometer">
@@ -458,11 +480,11 @@
 
 <!-- 2. GARAGE SCREEN -->
 <div id="garage-screen" class="screen-overlay">
-    <div class="menu-title" style="font-size: 40px;">GARAGE</div>
+    <div class="menu-title" style="font-size: 36px;">GARAGE</div>
     <div class="garage-container">
         <div class="nav-arrow" onclick="changeBikeView(-1)">&lt;</div>
         <div class="bike-preview">
-            <div id="garage-bike-display" style="font-size: 80px;">&#127949;</div>
+            <div id="garage-bike-display" style="font-size: 72px;">&#127949;</div>
         </div>
         <div class="bike-stats">
             <h2 id="bike-name" style="margin:0 0 10px 0;">Standard</h2>
@@ -470,7 +492,7 @@
             <div class="stat-bar-bg"><div id="stat-speed" class="stat-bar-fill" style="width: 50%; background: #00ccff;"></div></div>
             <div>Accel:</div>
             <div class="stat-bar-bg"><div id="stat-accel" class="stat-bar-fill" style="width: 50%; background: #ffaa00;"></div></div>
-            <p id="bike-cost" style="color: #ffd700; font-size: 20px; margin-top: 15px;">OWNED</p>
+            <p id="bike-cost" style="color: #ffd700; font-size: 18px; margin-top: 15px;">OWNED</p>
             <button id="buy-btn" class="btn" style="display:none; margin-top:10px; padding: 10px 20px;">BUY</button>
         </div>
         <div class="nav-arrow" onclick="changeBikeView(1)">&gt;</div>
@@ -480,7 +502,7 @@
 
 <!-- 3. MISSIONS SCREEN -->
 <div id="missions-screen" class="screen-overlay">
-    <div class="menu-title" style="font-size: 40px;">MISSIONS</div>
+    <div class="menu-title" style="font-size: 36px;">MISSIONS</div>
     <div class="mission-list" id="mission-list-container"></div>
     <button class="btn btn-back" onclick="showScreen('main-menu-screen')">BACK</button>
 </div>
@@ -498,13 +520,15 @@
 
 <!-- MOBILE CONTROLS -->
 <div id="mobile-controls" style="display:none;">
-  <div class="mobile-row">
-    <button class="ctrl-btn ctrl-left" id="btn-left">&#9664;</button>
-    <button class="ctrl-btn ctrl-right" id="btn-right">&#9654;</button>
+  <!-- Big accelerator left, brake right -->
+  <div class="mobile-row-bottom">
+    <button class="ctrl-btn ctrl-accel" id="btn-gas">GAS</button>
+    <button class="ctrl-btn ctrl-brake" id="btn-brake">BRAKE</button>
   </div>
-  <div class="mobile-row">
-    <button class="ctrl-btn ctrl-brake" id="btn-brake">Brake</button>
-    <button class="ctrl-btn ctrl-gas" id="btn-gas">Gas</button>
+  <!-- Lane arrows together on right side -->
+  <div class="mobile-row-arrows">
+    <button class="ctrl-btn ctrl-arrow" id="btn-left">&#9664;</button>
+    <button class="ctrl-btn ctrl-arrow" id="btn-right">&#9654;</button>
   </div>
 </div>
 
@@ -524,8 +548,8 @@
   <label class="control-option">
     Layout:
     <select id="control-layout">
-      <option value="gas-right">Gas on right</option>
-      <option value="gas-left">Gas on left</option>
+      <option value="gas-left">Gas left, Brake right</option>
+      <option value="gas-right">Gas right, Brake left</option>
     </select>
   </label>
 
@@ -557,8 +581,8 @@
 
     // --- MOBILE CONTROL STATE ---
     let isMobile = /Android|iPhone|iPad|iPod|Opera Mini|IEMobile/i.test(navigator.userAgent);
-    let controlType = 'buttons';     // 'buttons' or 'tilt'
-    let controlLayout = 'gas-right'; // 'gas-right' or 'gas-left'
+    let controlType = 'buttons';       // 'buttons' or 'tilt'
+    let controlLayout = 'gas-left';    // default to gas-left, brake-right
 
     // Bike Stats
     const bikeTypes = [
@@ -634,7 +658,7 @@
         createEndlessGround();
         createClouds();
 
-        // Events
+        // Keyboard events
         window.addEventListener('keydown', e => {
             keys[e.key.toLowerCase()] = true;
             if(e.key === '1') setCameraMode(1);
@@ -659,6 +683,11 @@
             document.getElementById('message').style.display = 'block';
         }
         setupControlSettingsUI();
+
+        // Camera buttons clickable on all devices
+        document.getElementById('cam1').addEventListener('click', () => setCameraMode(1));
+        document.getElementById('cam2').addEventListener('click', () => setCameraMode(2));
+        document.getElementById('cam3').addEventListener('click', () => setCameraMode(3));
     }
 
     function createEndlessGround() {
@@ -749,13 +778,9 @@
         const btnGas   = document.getElementById('btn-gas');
         const btnBrake = document.getElementById('btn-brake');
 
-        function bindButton(btn, keyDown, keyUp) {
+        function bindButton(btn, keyDown) {
             const down = (e) => { e.preventDefault(); keys[keyDown] = true; };
-            const up   = (e) => {
-                e.preventDefault();
-                keys[keyDown] = false;
-                if (keyUp) keys[keyUp] = false;
-            };
+            const up   = (e) => { e.preventDefault(); keys[keyDown] = false; };
 
             btn.addEventListener('touchstart', down);
             btn.addEventListener('touchend', up);
@@ -796,7 +821,7 @@
 
         typeSelect.addEventListener('change', () => {
             controlType = typeSelect.value;
-            // Hook for future tilt implementation
+            // Tilt hook for future
         });
 
         layoutSelect.addEventListener('change', () => {
@@ -808,13 +833,21 @@
     function applyControlLayout() {
         const gasBtn = document.getElementById('btn-gas');
         const brakeBtn = document.getElementById('btn-brake');
-
         if (!gasBtn || !brakeBtn) return;
 
+        const row = gasBtn.parentElement;
+        if (!row) return;
+
+        // Clear then re-insert in desired order
+        row.innerHTML = '';
         if (controlLayout === 'gas-right') {
-            gasBtn.parentElement.insertBefore(brakeBtn, gasBtn);
+            // Brake left, gas right
+            row.appendChild(brakeBtn);
+            row.appendChild(gasBtn);
         } else {
-            gasBtn.parentElement.insertBefore(gasBtn, brakeBtn);
+            // Gas left, brake right
+            row.appendChild(gasBtn);
+            row.appendChild(brakeBtn);
         }
     }
 
@@ -915,7 +948,7 @@
         showScreen('none');
         document.getElementById('hud').style.display = 'block';
         document.getElementById('speedometer').style.display = 'flex';
-        document.getElementById('cam-controls').style.display = 'block';
+        document.getElementById('cam-controls').style.display = 'flex';
 
         if (!isMobile) {
             document.getElementById('message').style.display = 'block';
@@ -940,9 +973,9 @@
         groundTile1.position.z = 0;
         groundTile2.position.z = -1000;
 
-        for(let i=0; i<5; i++) roadSegments.push(createRoadSegment(-i * 100));
-        for(let i=0; i<10; i++) createCar(-50 - i*25);
-        for(let i=0; i<5; i++) createCoin(-30 - i*40);
+        for(let i=0; i<6; i++) roadSegments.push(createRoadSegment(-i * 100));
+        for(let i=0; i<14; i++) createCar(-50 - i*25);
+        for(let i=0; i<7; i++) createCoin(-30 - i*40);
 
         for(let i=0; i<30; i++) {
             const tree = createTree();
@@ -1033,7 +1066,7 @@
     function createCar(z) {
         const g = new THREE.Group();
         const c = [0x00ccff, 0xffcc00, 0x00ff00, 0xffffff];
-        const body = new THREE.Mesh(
+        const body = new THREE Mesh(
             new THREE.BoxGeometry(1.8, 1, 3.5),
             new THREE.MeshStandardMaterial({ color: c[Math.floor(Math.random()*c.length)] })
         );
@@ -1049,10 +1082,10 @@
         g.position.z = z;
 
         if (laneIdx < 2) {
-            g.userData.speed = 0.1 + Math.random() * 0.1;
+            g.userData.speed = 0.2 + Math.random() * 0.2; // slightly faster
             g.rotation.y = 0;
         } else {
-            g.userData.speed = 0.5 + Math.random() * 0.5;
+            g.userData.speed = 0.6 + Math.random() * 0.6;
             g.rotation.y = Math.PI;
         }
 
@@ -1200,11 +1233,12 @@
             }
         }
 
-        let spawnRate = 0.03;
-        if (currentLevel === 2) spawnRate = 0.05;
-        if (currentLevel === 3) spawnRate = 0.07;
+        // Increased traffic spawn
+        let spawnRate = 0.06;
+        if (currentLevel === 2) spawnRate = 0.09;
+        if (currentLevel === 3) spawnRate = 0.12;
 
-        if (Math.random() < spawnRate) createCar(bike.position.z - 150 - Math.random()*50);
+        if (Math.random() < spawnRate) createCar(bike.position.z - 150 - Math.random()*80);
 
         for (let i = coinObjects.length - 1; i >= 0; i--) {
             const c = coinObjects[i];
@@ -1215,7 +1249,7 @@
                 scene.remove(c); coinObjects.splice(i, 1);
             }
         }
-        if (Math.random() < 0.02) createCoin(bike.position.z - 100 - Math.random()*50);
+        if (Math.random() < 0.03) createCoin(bike.position.z - 100 - Math.random()*80);
 
         const bikeBox = new THREE.Box3().setFromObject(bike).expandByScalar(-0.3);
         for (const car of cars) {
